@@ -5,7 +5,7 @@
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "deploy:admin": "APP=admin sst deploy --stage dev"
+    "deploy:dev": "sst deploy --stage dev"
   },
   "devDependencies": {
     "aws-cdk-lib": "^2.96.2",

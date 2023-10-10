@@ -56,7 +56,6 @@ export default {
         // cookie
         cookieBehavior: cloudfront.CacheCookieBehavior.allowList(
           'Authorization',
-          'refreshToken',
           'userId',
         ),
         // header
@@ -76,9 +75,11 @@ export default {
       const cdkOptions = {
         // @ts-ignore
         bucket: appBucket,
-        // distribution: {
-        //   defaultBehavior: behaviorOptions,
-        // },
+        distribution: {
+          defaultBehavior: {
+            cachePolicy,
+          },
+        },
       } satisfies NextjsSiteProps['cdk'];
 
       const site = new NextjsSite(stack, `${DEPLOY_ID}-${stage}`, {

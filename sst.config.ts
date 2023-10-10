@@ -76,9 +76,9 @@ export default {
       const cdkOptions = {
         // @ts-ignore
         bucket: appBucket,
-        distribution: {
-          defaultBehavior: behaviorOptions,
-        },
+        // distribution: {
+        //   defaultBehavior: behaviorOptions,
+        // },
       } satisfies NextjsSiteProps['cdk'];
 
       const site = new NextjsSite(stack, `${DEPLOY_ID}-${stage}`, {

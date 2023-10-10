@@ -6,6 +6,7 @@ import * as cdk from 'aws-cdk-lib';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import cloudfront, { ViewerProtocolPolicy } from 'aws-cdk-lib/aws-cloudfront';
+import { SsrSiteProps } from 'sst/constructs/SsrSite';
 
 // declare let bucket: s3.Bucket;
 
@@ -66,7 +67,7 @@ export default {
         maxTtl: cdk.Duration.seconds(1),
       });
 
-      const behavirOptions = {
+      const behaviorOptions = {
         origin: new origins.S3Origin(appBucket),
         viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
         cachePolicy,
@@ -75,6 +76,9 @@ export default {
       const cdkOptions = {
         // @ts-ignore
         bucket: appBucket,
+        distribution: {
+          defaultBehavior: behaviorOptions,
+        },
       } satisfies NextjsSiteProps['cdk'];
 
       const site = new NextjsSite(stack, `${DEPLOY_ID}-${stage}`, {

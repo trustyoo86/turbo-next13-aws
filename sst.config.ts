@@ -33,10 +33,10 @@ export default {
 
     console.log('environment', environment);
 
-    const { SST_ID } = environment;
+    const { DEPLOY_ID } = environment;
 
     return {
-      name: SST_ID,
+      name: `${DEPLOY_ID}-${stage}`,
       region: 'ap-northeast-2',
     };
   },

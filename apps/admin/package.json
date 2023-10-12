@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "build:dev": "STAGE=dev open-next build"
   },
   "dependencies": {
     "@ant-design/compatible": "^5.1.2",
@@ -24,6 +25,8 @@
     "typescript": "5.2.2"
   },
   "devDependencies": {
-    "@types/styled-components": "^5.1.28"
+    "@types/styled-components": "^5.1.28",
+    "dotenv": "^16.3.1",
+    "path": "^0.12.7"
   }
 }

@@ -1,3 +1,5 @@
+// import { resolve, join } from 'path';
+// import dotenv from 'dotenv';
 const { resolve, join } = require('path');
 const dotenv = require('dotenv');
 
@@ -15,5 +17,7 @@ console.log('stage =====>', stage);
 const nextConfig = {
   reactStrictMode: true,
 }
+
+// export default nextConfig;
 
 module.exports = nextConfig

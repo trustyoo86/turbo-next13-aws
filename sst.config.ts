@@ -83,6 +83,7 @@ export default {
       } satisfies NextjsSiteProps['cdk'];
 
       const site = new NextjsSite(stack, `${DEPLOY_ID}-${stage}`, {
+        buildCommand: `yarn build:${stage}`,
         path: DEPLOY_PATH,
         // @ts-ignore
         cdk: cdkOptions,

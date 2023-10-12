@@ -1,1 +1,0 @@
-export * from "./apps/admin/index.mjs";

@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 
 import * as cdk from 'aws-cdk-lib';
 import * as s3 from 'aws-cdk-lib/aws-s3';
+import { Bucket } from 'sst/constructs';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import cloudfront, { ViewerProtocolPolicy } from 'aws-cdk-lib/aws-cloudfront';
 import { SsrSiteProps } from 'sst/constructs/SsrSite';
@@ -72,9 +73,12 @@ export default {
         cachePolicy,
       };
 
+      const bucket = new Bucket(stack, 'Bucket', { name: S3_BUCKET });
+
       const cdkOptions = {
         // @ts-ignore
-        bucket: appBucket,
+        // bucket: appBucket,
+        bucket: bucket.bucketName,
         distribution: {
           defaultBehavior: {
             cachePolicy,
@@ -87,6 +91,7 @@ export default {
         path: DEPLOY_PATH,
         // @ts-ignore
         cdk: cdkOptions,
+        bind: [new Bucket(stack, S3_BUCKET)],
       });
 
       stack.addOutputs({

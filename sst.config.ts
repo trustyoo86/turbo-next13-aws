@@ -73,12 +73,9 @@ export default {
         cachePolicy,
       };
 
-      const bucket = new Bucket(stack, 'Bucket', { name: S3_BUCKET });
-
       const cdkOptions = {
         // @ts-ignore
-        // bucket: appBucket,
-        bucket: bucket.bucketName,
+        bucket: appBucket,
         distribution: {
           defaultBehavior: {
             cachePolicy,

@@ -6,7 +6,7 @@ import * as cdk from 'aws-cdk-lib';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import { Bucket } from 'sst/constructs';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
-import cloudfront, { ViewerProtocolPolicy } from 'aws-cdk-lib/aws-cloudfront';
+import cloudfront, { Distribution, ViewerProtocolPolicy } from 'aws-cdk-lib/aws-cloudfront';
 import { SsrSiteProps } from 'sst/constructs/SsrSite';
 
 // declare let bucket: s3.Bucket;
@@ -72,6 +72,11 @@ export default {
         viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
         cachePolicy,
       };
+
+      const existingDistribution = Distribution.fromDistributionAttributes(stack, 'test', {
+        distributionId: '23FAEFASDF',
+        domainName: '',
+      });
 
       const cdkOptions = {
         // @ts-ignore

@@ -1,0 +1,181 @@
+service: terraform-app
+
+useDotenv: true
+
+plugins:
+  - serverless-scriptable-plugin
+  - serverless-s3-sync
+
+package:
+  individually: true
+
+provider:
+  name: aws
+  region: ap-northeast-1
+  endpointType: REGIONAL
+
+custom:
+  scriptable:
+    hooks:
+      before:package:createDeploymentArtifacts:
+        - mkdir -p ./.open-next/zips
+        - cd .open-next/server-function && zip -r ../zips/server-function.zip .
+        - cd .open-next/image-optimization-function && zip -r ../zips/image-optimization-function.zip .
+  s3Sync:
+    - bucketName: terraform-app-assets
+      localDir: .open-next/assets
+
+functions:
+  server:
+    description: Default lambda for Next Cloudfront distribution
+    name: terraform-app-lambda
+    handler: index.handler
+    runtime: nodejs18.x
+    architecture: arm64
+    memorySize: 512
+    timeout: 10
+    url: true
+    package:
+      artifact: .open-next/zips/server-function.zip
+  imageOptimization:
+    description: Image Lambda for Next CloudFront distribution
+    name: terraform-app-image-lambda
+    handler: index.handler
+    runtime: nodejs18.x
+    architecture: arm64
+    memorySize: 512
+    timeout: 10
+    url: true
+    package:
+      artifact: .open-next/zips/image-optimization-function.zip
+    environment:
+      BUCKET_NAME: terraform-app-assets
+
+resources:
+  Resources:
+    AssetsBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: terraform-app-assets
+    AssetsBucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket: !Ref AssetsBucket
+        PolicyDocument:
+          Statement:
+            - Action: s3:GetObject
+              Effect: Allow
+              Resource: !Sub ${AssetsBucket.Arn}/*
+              Principal:
+                Service: cloudfront.amazonaws.com
+              Condition:
+                StringEquals:
+                  AWS:SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${DefaultDistribution}
+    DefaultDistribution:
+      Type: AWS::CloudFront::Distribution
+      Properties:
+        DistributionConfig:
+          Enabled: true
+          ViewerCertificate:
+            AcmCertificateArn: "AAAAAAAARRRRRRRRRRRRRRNNNNNNNNNNN"
+            MinimumProtocolVersion: TLSv1.1_2016
+            SslSupportMethod: sni-only
+          Origins:
+            - Id: ServerFunctionOrigin
+              DomainName: !Select [2, !Split ["/", !GetAtt ServerLambdaFunctionUrl.FunctionUrl]]
+              CustomOriginConfig:
+                HTTPSPort: 443
+                OriginProtocolPolicy: https-only
+            - Id: StaticAssetOrigin
+              DomainName: !GetAtt AssetsBucket.RegionalDomainName
+              S3OriginConfig:
+                OriginAccessIdentity: ""
+              OriginAccessControlId: !GetAtt CloudFrontAccessToS3Bucket.Id
+            - Id: ImageOptimizationFunctionOrigin
+              DomainName: !Select [2, !Split ["/", !GetAtt ImageOptimizationLambdaFunctionUrl.FunctionUrl]]
+              CustomOriginConfig:
+                HTTPSPort: 443
+                OriginProtocolPolicy: https-only
+          OriginGroups:
+            Quantity: 1
+            Items:
+              - Id: ServerAndStaticAssetOriginGroup
+                FailoverCriteria:
+                  StatusCodes:
+                    Quantity: 2
+                    Items:
+                      - 500
+                      - 502
+                Members:
+                  Quantity: 2
+                  Items:
+                    - OriginId: ServerFunctionOrigin
+                    - OriginId: StaticAssetOrigin
+          DefaultCacheBehavior:
+            MinTTL: 0
+            DefaultTTL: 0
+            MaxTTL: 31536000
+            TargetOriginId: ServerAndStaticAssetOriginGroup
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods: ["GET", "HEAD", "OPTIONS"]
+            CachedMethods: ["HEAD", "GET"]
+            Compress: true
+            ForwardedValues:
+              QueryString: true
+              Headers:
+                - x-op-middleware-request-headers
+                - x-op-middleware-response-headers
+                - x-nextjs-data
+                - x-middleware-prefetch
+              Cookies:
+                Forward: all
+          CacheBehaviors:
+            - TargetOriginId: StaticAssetOrigin
+              ViewerProtocolPolicy: https-only
+              PathPattern: /_next/static/*
+              Compress: true
+              AllowedMethods: ["GET", "HEAD", "OPTIONS"]
+              CachedMethods: ["HEAD", "GET"]
+              ForwardedValues:
+                QueryString: false
+            - TargetOriginId: ServerFunctionOrigin
+              ViewerProtocolPolicy: https-only
+              PathPattern: /api/*
+              AllowedMethods:
+                ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
+              ForwardedValues:
+                QueryString: true
+                Cookies:
+                  Forward: all
+                Headers: ["Authorization", "Host", "Accept-Language"]
+            - TargetOriginId: ImageOptimizationFunctionOrigin
+              ViewerProtocolPolicy: https-only
+              PathPattern: /_next/image
+              AllowedMethods:
+                ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
+              ForwardedValues:
+                QueryString: true
+                Headers: ["Accept"]
+            - TargetOriginId: ServerFunctionOrigin
+              ViewerProtocolPolicy: https-only
+              PathPattern: /_next/data/*
+              AllowedMethods: ["GET", "HEAD"]
+              ForwardedValues:
+                QueryString: true
+                Cookies:
+                  Forward: all
+                Headers:
+                  - x-op-middleware-request-headers
+                  - x-op-middleware-response-headers
+                  - x-nextjs-data
+                  - x-middleware-prefetch
+    CloudFrontAccessToS3Bucket:
+      Type: AWS::CloudFront::OriginAccessControl
+      Properties:
+        OriginAccessControlConfig:
+          Name: CloudFrontAccessToS3BucketOriginAccess
+          OriginAccessControlOriginType: s3
+          SigningBehavior: always
+          SigningProtocol: sigv4
+
+      

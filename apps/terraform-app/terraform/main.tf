@@ -23,9 +23,11 @@ locals {
 }
 
 module "opennext" {
-  source = "nhs-england-tools/opennext/aws"
+  source  = "nhs-england-tools/opennext/aws"
+  version = "1.0.3"
 
   prefix              = "terraform-aws-opennext"
+  default_tags        = local.default_tags
   opennext_build_path = "../.open-next"
   hosted_zone_id      = data.aws_route53_zone.zone.zone_id
 

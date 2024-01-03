@@ -3,12 +3,12 @@ import { Client } from '@notionhq/client';
 
 
 const notion = new Client({
-  auth: 'secret_sCW9j8zJbbyUHwqB1JVfd6auyyJ4ewyYyydohfDjOMZ',
+  auth: process.env.NOTION_API_TOKEN,
 });
 
 function getData() {
   return notion.databases.query({
-    database_id: '2146226f78724bc8b273df53b483d658',
+    database_id: process.env.NOTION_DATABASE_ID as string,
   });
 }
 
